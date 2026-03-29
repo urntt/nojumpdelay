@@ -1,0 +1,14 @@
+{
+	"required": true,
+	"package": "com.urntt.mixin.client",
+	"compatibilityLevel": "JAVA_22",
+	"client": [
+		"LivingEntityAccessor"
+	],
+	"injectors": {
+		"defaultRequire": 1
+	},
+	"overwrites": {
+		"requireAnnotations": true
+	}
+}

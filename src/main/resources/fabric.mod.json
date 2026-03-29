@@ -1,0 +1,34 @@
+{
+	"schemaVersion": 1,
+	"id": "nojumpdelay",
+	"version": "${version}",
+	"name": "No Jump Delay",
+	"description": "Removes the player's jump cooldown on the client.",
+	"authors": [
+		"urntt"
+	],
+	"contact": {
+		"homepage": "https://github.com/urntt/nojumpdelay",
+		"sources": "https://github.com/urntt/nojumpdelay"
+	},
+	"license": "MIT",
+	"icon": "assets/nojumpdelay/icon.png",
+	"environment": "client",
+	"entrypoints": {
+		"client": [
+			"com.urntt.NoJumpDelayClient"
+		]
+	},
+	"mixins": [
+		{
+			"config": "nojumpdelay.client.mixins.json",
+			"environment": "client"
+		}
+	],
+	"depends": {
+		"fabricloader": ">=0.18.5",
+		"minecraft": "~26.1",
+		"java": ">=25",
+		"fabric-api": ">=0.144.3"
+	}
+}
