@@ -3,7 +3,7 @@
 	"id": "nojumpdelay",
 	"version": "${version}",
 	"name": "No Jump Delay",
-	"description": "Removes the player's jump cooldown on the client.",
+	"description": "Removes the player's jump cooldown on the client and add air jump.",
 	"authors": [
 		"urntt"
 	],

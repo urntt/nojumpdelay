@@ -22,6 +22,8 @@ public final class NoJumpDelayClient implements ClientModInitializer {
 					AIR_JUMP_CATEGORY
 			)
 	);
+	private boolean wasOnGround;
+	private boolean airJumpReleased = true;
 
 	@Override
 	public void onInitializeClient() {
@@ -30,19 +32,36 @@ public final class NoJumpDelayClient implements ClientModInitializer {
 
 	private void onEndClientTick(final Minecraft client) {
 		if (client.player == null) {
+			wasOnGround = false;
+			airJumpReleased = true;
 			return;
 		}
 
 		((LivingEntityAccessor) client.player).setNoJumpDelay(0);
 
 		if (client.screen != null) {
+			wasOnGround = false;
+			airJumpReleased = true;
 			return;
 		}
 
+		final boolean onGround = client.player.onGround();
+		final boolean jumpKeyDown = client.options.keyJump.isDown();
+
+		if (!jumpKeyDown) {
+			airJumpReleased = true;
+		}
+
 		while (client.options.keyJump.consumeClick()) {
-			if (!client.player.onGround() && AIR_JUMP_MODIFIER.isDown()) {
+			if (AIR_JUMP_MODIFIER.isDown()
+					&& !onGround
+					&& !wasOnGround
+					&& airJumpReleased) {
 				client.player.jumpFromGround();
+				airJumpReleased = false;
 			}
 		}
+
+		wasOnGround = onGround;
 	}
 }
