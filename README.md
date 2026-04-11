@@ -1,16 +1,15 @@
 # NoJumpDelay
 
-A simple Fabric client-side mod that removes the player's jump cooldown.
+A simple Fabric client-side mod that removes the player's jump cooldown and add air jump.
 
 ## Features
 
-* Removes jump delay
-* Client-side only
-* Lightweight and fast
+* Removes jump delay so player will jump immediately after landing when holding the jump key
+* Adds air jump so player can jump mid-air when holding the configuired air jump key (default R)
 
 ## Requirements
 
-* Minecraft 26.1
+* Minecraft 26.1+
 * Fabric Loader 0.18.5+
 * Fabric API 0.144.3+
 
