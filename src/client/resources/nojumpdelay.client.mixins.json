@@ -3,7 +3,8 @@
 	"package": "com.urntt.mixin.client",
 	"compatibilityLevel": "JAVA_22",
 	"client": [
-		"LivingEntityAccessor"
+		"LivingEntityAccessor",
+		"KeyboardHandlerMixin"
 	],
 	"injectors": {
 		"defaultRequire": 1

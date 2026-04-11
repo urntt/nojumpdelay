@@ -5,7 +5,7 @@ A simple Fabric client-side mod that removes the player's jump cooldown and add 
 ## Features
 
 * Removes jump delay so player will jump immediately after landing when holding the jump key
-* Adds air jump so player can jump mid-air when holding the configuired air jump key (default R)
+* Adds air jump so player can jump midair when holding the configured air jump key (default R)
 
 ## Requirements
 
