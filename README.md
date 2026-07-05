@@ -9,9 +9,9 @@ A simple Fabric client-side mod that removes the player's jump cooldown and add 
 
 ## Requirements
 
-* Minecraft 26.1+
-* Fabric Loader 0.18.5+
-* Fabric API 0.144.3+
+* Minecraft 26.2+
+* Fabric Loader 0.19.3+
+* Fabric API 0.154.0+
 
 ## Installation
 

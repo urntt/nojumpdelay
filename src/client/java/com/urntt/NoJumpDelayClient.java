@@ -42,7 +42,7 @@ public final class NoJumpDelayClient implements ClientModInitializer {
 			return;
 		}
 
-		if (client.screen != null) {
+		if (client.gui.screen() != null) {
 			return;
 		}
 
