@@ -1,0 +1,14 @@
+{
+	"required": true,
+	"package": "com.urntt.nojumpdelay.mixin",
+	"compatibilityLevel": "JAVA_${java_version}",
+	"client": [
+		"LivingEntityMixin"
+	],
+	"injectors": {
+		"defaultRequire": 1
+	},
+	"overwrites": {
+		"requireAnnotations": true
+	}
+}

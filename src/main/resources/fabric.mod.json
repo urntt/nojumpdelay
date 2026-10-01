@@ -1,0 +1,41 @@
+{
+	"schemaVersion": 1,
+	"id": "nojumpdelay",
+	"version": "${version}",
+	"name": "nojumpdelay",
+	"description": "Removes the local player's jump cooldown.",
+	"authors": [
+		"urntt"
+	],
+	"contact": {
+		"homepage": "https://github.com/urntt/nojumpdelay",
+		"sources": "https://github.com/urntt/nojumpdelay",
+		"issues": "https://github.com/urntt/nojumpdelay/issues"
+	},
+	"license": "MIT",
+	"icon": "assets/nojumpdelay/icon.png",
+	"environment": "client",
+	"entrypoints": {
+		"client": [
+			"com.urntt.nojumpdelay.NoJumpDelayClient"
+		],
+		"modmenu": [
+			"com.urntt.nojumpdelay.compat.ModMenuIntegration"
+		]
+	},
+	"mixins": [
+		{
+			"config": "nojumpdelay.client.mixins.json",
+			"environment": "client"
+		}
+	],
+	"depends": {
+		"fabricloader": ">=${loader_version}",
+		"minecraft": "~${minecraft_version}",
+		"java": ">=${java_version}",
+		"fabric-api": ">=${fabric_api_version}"
+	},
+	"suggests": {
+		"modmenu": "*"
+	}
+}

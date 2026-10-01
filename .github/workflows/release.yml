@@ -1,0 +1,61 @@
+# Publish a GitHub Release when a version tag is pushed. The tag must be
+# "v<version>", where <version> is the project version from build.gradle
+# (for example v1.0.0+26.3), and CHANGELOG.md must contain a section for it.
+
+name: release
+on:
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-24.04
+    steps:
+      - name: checkout repository
+        uses: actions/checkout@v6
+      - name: validate gradle wrapper
+        uses: gradle/actions/wrapper-validation@v6
+      - name: read java version
+        id: java
+        run: echo "version=$(sed -n 's/^java_version=//p' gradle.properties)" >> "$GITHUB_OUTPUT"
+      - name: setup jdk
+        uses: actions/setup-java@v5
+        with:
+          java-version: ${{ steps.java.outputs.version }}
+          distribution: 'microsoft'
+      - name: make gradle wrapper executable
+        run: chmod +x ./gradlew
+      - name: build
+        run: ./gradlew build
+      - name: prepare release
+        id: release
+        env:
+          TAG: ${{ github.ref_name }}
+        run: |
+          version="${TAG#v}"
+          jar="build/libs/nojumpdelay-${version}.jar"
+          if [ ! -f "$jar" ]; then
+            echo "::error::Tag $TAG does not match the project version; expected $(ls build/libs/ | grep -v -- -sources)"
+            exit 1
+          fi
+          awk -v heading="## [${version}]" '
+            index($0, "## [") == 1 { if (found) exit; found = (index($0, heading) == 1); next }
+            found { print }
+          ' CHANGELOG.md > release-notes.md
+          if [ ! -s release-notes.md ]; then
+            echo "::error::CHANGELOG.md has no section for $version"
+            exit 1
+          fi
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+          echo "jar=$jar" >> "$GITHUB_OUTPUT"
+      - name: publish release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ github.ref_name }}
+          VERSION: ${{ steps.release.outputs.version }}
+          JAR: ${{ steps.release.outputs.jar }}
+        run: gh release create "$TAG" "$JAR" --title "nojumpdelay $VERSION" --notes-file release-notes.md

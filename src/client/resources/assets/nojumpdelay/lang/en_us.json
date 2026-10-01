@@ -1,0 +1,7 @@
+{
+	"key.category.nojumpdelay.general": "nojumpdelay",
+	"key.nojumpdelay.toggle": "Toggle No Jump Delay",
+	"options.nojumpdelay.title": "nojumpdelay Settings",
+	"options.nojumpdelay.enabled": "No Jump Delay",
+	"modmenu.descriptionTranslation.nojumpdelay": "Removes the local player's jump cooldown."
+}

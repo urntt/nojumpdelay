@@ -1,0 +1,15 @@
+{
+	"schemaVersion": 1,
+	"id": "nojumpdelay-gametest",
+	"version": "0.0.0",
+	"name": "nojumpdelay game tests",
+	"environment": "client",
+	"entrypoints": {
+		"fabric-client-gametest": [
+			"com.urntt.nojumpdelay.gametest.NoJumpDelayClientGameTest"
+		]
+	},
+	"depends": {
+		"nojumpdelay": "*"
+	}
+}

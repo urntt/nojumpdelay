@@ -14,8 +14,9 @@ These decisions are settled. Do not deviate from them without the user's explici
 
 ### Minecraft and toolchain
 
-- Development started on Minecraft 26.3 with Java 25. Once the project is scaffolded, `gradle.properties` is the single source of truth for the Minecraft, Fabric Loader, Loom, and Fabric API versions; do not restate them elsewhere.
+- Development started on Minecraft 26.3 with Java 25. `gradle.properties` is the single source of truth for the mod, Minecraft, Fabric Loader, Loom, Fabric API, Mod Menu, and Java versions. `build.gradle`, `fabric.mod.json`, the mixin config, and the CI workflows read them from there; do not restate them elsewhere.
 - Follow the latest official Fabric template ([FabricMC/fabric-example-mod](https://github.com/FabricMC/fabric-example-mod), also available from the [template generator](https://fabricmc.net/develop/template/)): the `net.fabricmc.fabric-loom` Gradle plugin, Mojang's official names with no `mappings` dependency, and `implementation` (not `modImplementation`) for dependencies. Do not use Yarn.
+- Pin `loom_version` to a release version instead of the template's `-SNAPSHOT`, so builds are reproducible.
 - Target only the latest stable (release) Minecraft version. Updates, fixes, and new features are always developed against it. Snapshots, pre-releases, and release candidates are not supported targets.
 - Do not maintain older Minecraft versions and do not set up multi-version builds (no per-version branches, no Stonecutter or other preprocessors). When a new stable version is released, port the mod to it and drop the previous one.
 
@@ -60,13 +61,21 @@ The mod version itself follows [Semantic Versioning](https://semver.org/); the `
 ### Implementation
 
 - Language: Java only.
+- Source sets: `src/main` holds only `fabric.mod.json` and the icon. All code and client resources live in `src/client`, and the client game tests live in `src/gametest`.
 - Mixins: prefer the MixinExtras injectors bundled with Fabric Loader (for example `@ModifyExpressionValue` and `@WrapOperation`) over `@Redirect` and `@Overwrite`, to stay compatible with other mods and keep porting work small.
+
+### Testing
+
+- The client game tests in `src/gametest` start Minecraft and check the jump behavior, the toggle key, and the saved configuration. Keep them passing and extend them when behavior changes.
+- After porting to a new Minecraft version, run the client game tests. A successful build does not prove that the mixin still has the intended effect.
+- `README.md` describes how to run them, including on a headless machine.
 
 ### CI, releases, and changelog
 
-- GitHub Actions builds the project on every push and pull request.
-- Release builds are attached to GitHub Releases.
+- GitHub Actions (`.github/workflows/build.yml`) builds the project and runs the client game tests on every push and pull request.
 - Maintain `CHANGELOG.md` following [Keep a Changelog](https://keepachangelog.com/). Record every user-visible change under `Unreleased` in the same change that introduces it.
+- Pushing a tag `v<version>`, for example `v1.0.0+26.3`, runs `.github/workflows/release.yml`. It builds the mod and publishes a GitHub Release with the jar attached and the matching `CHANGELOG.md` section as release notes. It fails if the tag does not match the project version or the changelog has no section for it.
+- Release only when the user asks. To release, set `mod_version` in `gradle.properties`, rename `Unreleased` in `CHANGELOG.md` to `[<version>] - <YYYY-MM-DD>` above a new empty `Unreleased` section, commit, and push the tag.
 
 ## Engineering principles
 
@@ -93,6 +102,6 @@ The mod version itself follows [Semantic Versioning](https://semver.org/); the `
   - Email: `urntts@gmail.com`
 - Do all actions on the user's behalf. Do not rewrite existing commit authorship unless explicitly requested. Do not add `Co-Authored-By` trailers or session links to commit messages or pull request descriptions.
 - Develop on `main` and push directly to it. Branches and pull requests are not required.
-- Because changes land on `main` without review, make sure the build passes locally before pushing.
+- Because changes land on `main` without review, make sure `./gradlew build` and the client game tests pass locally before pushing.
 - If a branch is used, give it a category-based prefix that reflects the purpose of the change, such as `feat/`, `fix/`, `refactor/`, `docs/`, `test/`, or `chore/`.
 - Follow the [Conventional Commits](https://www.conventionalcommits.org/) specification for commit messages.

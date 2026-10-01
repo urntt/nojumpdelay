@@ -1,0 +1,7 @@
+{
+	"key.category.nojumpdelay.general": "nojumpdelay",
+	"key.nojumpdelay.toggle": "切换无跳跃冷却",
+	"options.nojumpdelay.title": "nojumpdelay 设置",
+	"options.nojumpdelay.enabled": "无跳跃冷却",
+	"modmenu.descriptionTranslation.nojumpdelay": "移除本地玩家的跳跃冷却。"
+}
