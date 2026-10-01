@@ -6,6 +6,8 @@ Instructions for AI coding agents working in this repository. `CLAUDE.md` import
 
 `nojumpdelay` is a client-side [Fabric](https://fabricmc.net/) mod for Minecraft: Java Edition that removes the local player's jump cooldown (the `LivingEntity.noJumpDelay` timer).
 
+The archived predecessor [urntt/nojumpdelay-legacy](https://github.com/urntt/nojumpdelay-legacy) may be consulted for verified 26.x API usage. Do not copy its build configuration, which predates the current Fabric template, or its package layout.
+
 ## Project decisions
 
 These decisions are settled. Do not deviate from them without the user's explicit approval.
@@ -28,7 +30,7 @@ These decisions are settled. Do not deviate from them without the user's explici
 | Version format | `<SemVer>+<Minecraft version>`, for example `1.0.0+26.3` |
 | License | MIT |
 
-The mod version itself follows [Semantic Versioning](https://semver.org/); the `+<Minecraft version>` suffix is build metadata naming the Minecraft version the build targets.
+The mod version itself follows [Semantic Versioning](https://semver.org/); the `+<Minecraft version>` suffix is build metadata naming the Minecraft version the build targets. Version numbers start at `1.0.0`, independent of the predecessor's releases.
 
 ### Distribution
 
@@ -38,9 +40,15 @@ The mod version itself follows [Semantic Versioning](https://semver.org/); the `
 ### Scope and behavior
 
 - Client-only: `fabric.mod.json` declares `"environment": "client"`. There is no server-side component and no networking.
+- The mod only removes the jump cooldown. Other movement features are out of scope; in particular, air jump is planned as a separate mod and must not be added here.
 - Only the local player (`LocalPlayer`) is affected. The jump behavior of every other entity, including other players and mobs simulated on the client, must stay vanilla.
 - The feature is enabled by default.
 - A configurable key binding toggles the feature. It is unbound by default. Each toggle shows the new state on the action bar and saves it to the configuration file, so it persists across game restarts.
+
+### Localization
+
+- All user-facing text, including key binding names, the key binding category, action bar messages, and the configuration screen, uses translation keys. Never hard-code display strings.
+- Provide translations for `en_us` and `zh_cn`, and keep both complete whenever a translation key is added or changed.
 
 ### Dependencies
 
