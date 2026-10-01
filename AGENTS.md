@@ -92,5 +92,7 @@ The mod version itself follows [Semantic Versioning](https://semver.org/); the `
   - Name: `urntt`
   - Email: `urntts@gmail.com`
 - Do all actions on the user's behalf. Do not rewrite existing commit authorship unless explicitly requested. Do not add `Co-Authored-By` trailers or session links to commit messages or pull request descriptions.
-- Use category-based branch prefixes that reflect the purpose of the change, such as `feat/`, `fix/`, `refactor/`, `docs/`, `test/`, or `chore/`.
+- Develop on `main` and push directly to it. Branches and pull requests are not required.
+- Because changes land on `main` without review, make sure the build passes locally before pushing.
+- If a branch is used, give it a category-based prefix that reflects the purpose of the change, such as `feat/`, `fix/`, `refactor/`, `docs/`, `test/`, or `chore/`.
 - Follow the [Conventional Commits](https://www.conventionalcommits.org/) specification for commit messages.
