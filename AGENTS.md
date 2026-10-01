@@ -74,8 +74,8 @@ The mod version itself follows [Semantic Versioning](https://semver.org/); the `
 
 - GitHub Actions (`.github/workflows/build.yml`) builds the project and runs the client game tests on every push and pull request.
 - Maintain `CHANGELOG.md` following [Keep a Changelog](https://keepachangelog.com/). Record every user-visible change under `Unreleased` in the same change that introduces it.
-- Pushing a tag `v<version>`, for example `v1.0.0+26.3`, runs `.github/workflows/release.yml`. It builds the mod and publishes a GitHub Release with the jar attached and the matching `CHANGELOG.md` section as release notes. It fails if the tag does not match the project version or the changelog has no section for it.
-- Release only when the user asks. To release, set `mod_version` in `gradle.properties`, rename `Unreleased` in `CHANGELOG.md` to `[<version>] - <YYYY-MM-DD>` above a new empty `Unreleased` section, commit, and push the tag.
+- `.github/workflows/release.yml` builds the mod and publishes a GitHub Release for the project version, with the jar attached and the matching `CHANGELOG.md` section as release notes. It runs when a tag `v<version>` (for example `v1.0.0+26.3`) is pushed, or when started manually on a branch, in which case it creates that tag on the branch's latest commit. It fails if a pushed tag does not match the project version, if the changelog has no section for the version, or if the release already exists.
+- Release only when the user asks. To release, set `mod_version` in `gradle.properties`, rename `Unreleased` in `CHANGELOG.md` to `[<version>] - <YYYY-MM-DD>` above a new empty `Unreleased` section, commit, and push. Then start the release workflow on `main`. Claude Code cloud sessions cannot push tags, so start the workflow through the GitHub Actions API instead.
 
 ## Engineering principles
 

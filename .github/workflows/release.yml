@@ -1,12 +1,15 @@
-# Publish a GitHub Release when a version tag is pushed. The tag must be
-# "v<version>", where <version> is the project version from build.gradle
-# (for example v1.0.0+26.3), and CHANGELOG.md must contain a section for it.
+# Publish a GitHub Release for the project version from build.gradle (for
+# example 1.0.0+26.3), using its section in CHANGELOG.md as release notes.
+#
+# Trigger it either by pushing the tag "v<version>", or by running it manually
+# on a branch, which creates that tag on the branch's latest commit.
 
 name: release
 on:
   push:
     tags:
       - 'v*'
+  workflow_dispatch:
 
 permissions:
   contents: write
@@ -34,12 +37,20 @@ jobs:
       - name: prepare release
         id: release
         env:
-          TAG: ${{ github.ref_name }}
+          EVENT: ${{ github.event_name }}
+          REF_NAME: ${{ github.ref_name }}
         run: |
-          version="${TAG#v}"
-          jar="build/libs/nojumpdelay-${version}.jar"
-          if [ ! -f "$jar" ]; then
-            echo "::error::Tag $TAG does not match the project version; expected $(ls build/libs/ | grep -v -- -sources)"
+          jars=$(find build/libs -name 'nojumpdelay-*.jar' ! -name '*-sources.jar')
+          if [ -z "$jars" ] || [ "$(printf '%s\n' "$jars" | wc -l)" -ne 1 ]; then
+            echo "::error::Expected exactly one mod jar in build/libs, found: $jars"
+            exit 1
+          fi
+          jar="$jars"
+          version=$(basename "$jar" .jar)
+          version="${version#nojumpdelay-}"
+          tag="v${version}"
+          if [ "$EVENT" = "push" ] && [ "$REF_NAME" != "$tag" ]; then
+            echo "::error::Tag $REF_NAME does not match the project version; expected $tag"
             exit 1
           fi
           awk -v heading="## [${version}]" '
@@ -51,11 +62,16 @@ jobs:
             exit 1
           fi
           echo "version=$version" >> "$GITHUB_OUTPUT"
+          echo "tag=$tag" >> "$GITHUB_OUTPUT"
           echo "jar=$jar" >> "$GITHUB_OUTPUT"
       - name: publish release
         env:
           GH_TOKEN: ${{ github.token }}
-          TAG: ${{ github.ref_name }}
           VERSION: ${{ steps.release.outputs.version }}
+          TAG: ${{ steps.release.outputs.tag }}
           JAR: ${{ steps.release.outputs.jar }}
-        run: gh release create "$TAG" "$JAR" --title "nojumpdelay $VERSION" --notes-file release-notes.md
+        run: >
+          gh release create "$TAG" "$JAR"
+          --target "$GITHUB_SHA"
+          --title "nojumpdelay $VERSION"
+          --notes-file release-notes.md
