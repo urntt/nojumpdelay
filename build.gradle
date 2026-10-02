@@ -31,6 +31,8 @@ fabricApi {
 		modId = "nojumpdelay-gametest"
 		enableGameTests = false
 		enableClientGameTests = true
+		// The multiplayer game tests start a local dedicated server, which only runs once the Minecraft EULA is accepted.
+		eula = true
 	}
 }
 

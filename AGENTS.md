@@ -43,8 +43,13 @@ The mod version itself follows [Semantic Versioning](https://semver.org/); the `
 - Client-only: `fabric.mod.json` declares `"environment": "client"`. There is no server-side component and no networking.
 - The mod only removes the jump cooldown. Other movement features are out of scope; in particular, air jump is planned as a separate mod and must not be added here.
 - Only the local player (`LocalPlayer`) is affected. The jump behavior of every other entity, including other players and mobs simulated on the client, must stay vanilla.
-- The feature is enabled by default.
-- A configurable key binding toggles the feature. It is unbound by default. Each toggle shows the new state on the action bar and saves it to the configuration file, so it persists across game restarts.
+- `JumpDelayController` is the single owner of whether the feature is active: the toggle state is on and the current scene (singleplayer or a multiplayer server, determined on join) is allowed.
+- The toggle state is enabled by default. A configurable key binding toggles it. It is unbound by default. Each toggle shows the new state on the action bar and saves it to the configuration file, so it persists across game restarts.
+- Defaults depend on the scene: a singleplayer default (worlds hosted by this client, including ones opened to LAN) and a server default (servers the multiplayer mode allows). Both are on by default.
+- Reset rules restore the scene's default when the player joins an allowed scene: "reset on world exit" for every world, and "reset on game exit" for the first allowed world after the game starts. Both are off by default. Resets happen on join so that they use the next scene's default and still work after a crash.
+- The multiplayer mode is a hard limit: `DISABLED` (the default) rules out every server, `WHITELIST` allows only servers in the server list, and `BLACKLIST` allows every server except those in it. On a ruled-out server the feature stays off and the toggle key only reports that it is disabled there. Joining another player's LAN world or a Realm counts as multiplayer.
+- Server list entries match the connected address by host (case-insensitive, after IDN conversion, and required to be a valid domain name or IP address) and by port only when the entry specifies one.
+- The configuration screen is built from vanilla widgets and opens through Mod Menu or a second key binding, "open settings", which is also unbound by default.
 
 ### Localization
 
@@ -66,7 +71,8 @@ The mod version itself follows [Semantic Versioning](https://semver.org/); the `
 
 ### Testing
 
-- The client game tests in `src/gametest` start Minecraft and check the jump behavior, the toggle key, and the saved configuration. Keep them passing and extend them when behavior changes.
+- The client game tests in `src/gametest` cover the address matching, the defaults and reset rules (`NoJumpDelayLogicGameTest`), the jump behavior, toggle key, reset on world exit and settings screens in singleplayer (`NoJumpDelayClientGameTest`), and each multiplayer mode on a local dedicated server (`NoJumpDelayMultiplayerGameTest`). Keep them passing and extend them when behavior changes.
+- The dedicated server needs `eula = true` in the `configureTests` block of `build.gradle`; it accepts the Minecraft EULA only for that local test server.
 - After porting to a new Minecraft version, run the client game tests. A successful build does not prove that the mixin still has the intended effect.
 - `README.md` describes how to run them, including on a headless machine.
 

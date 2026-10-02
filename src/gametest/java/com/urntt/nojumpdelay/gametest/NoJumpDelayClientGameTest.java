@@ -1,50 +1,47 @@
 package com.urntt.nojumpdelay.gametest;
 
-import com.mojang.blaze3d.platform.InputConstants;
+import static com.urntt.nojumpdelay.gametest.GameTestSupport.bindKey;
+import static com.urntt.nojumpdelay.gametest.GameTestSupport.check;
+import static com.urntt.nojumpdelay.gametest.GameTestSupport.checkCooldownRemoved;
+import static com.urntt.nojumpdelay.gametest.GameTestSupport.checkVanillaCooldown;
+import static com.urntt.nojumpdelay.gametest.GameTestSupport.configure;
+import static com.urntt.nojumpdelay.gametest.GameTestSupport.isEnabled;
+import static com.urntt.nojumpdelay.gametest.GameTestSupport.loadSavedConfig;
+import static com.urntt.nojumpdelay.gametest.GameTestSupport.placeLowCeiling;
+import static com.urntt.nojumpdelay.gametest.GameTestSupport.unbindKey;
+
 import com.urntt.nojumpdelay.NoJumpDelayClient;
-import com.urntt.nojumpdelay.config.NoJumpDelayConfig;
+import com.urntt.nojumpdelay.config.MultiplayerMode;
 import com.urntt.nojumpdelay.config.NoJumpDelayConfigScreen;
-import java.util.Objects;
+import com.urntt.nojumpdelay.config.ServerListScreen;
+import java.util.List;
+import java.util.concurrent.CompletableFuture;
 import net.fabricmc.fabric.api.client.gametest.v1.FabricClientGameTest;
 import net.fabricmc.fabric.api.client.gametest.v1.context.ClientGameTestContext;
 import net.fabricmc.fabric.api.client.gametest.v1.context.TestSingleplayerContext;
 import net.minecraft.client.KeyMapping;
-import net.minecraft.core.BlockPos;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
+/**
+ * Checks the feature, the toggle key, the reset on world exit, and the settings key in singleplayer worlds.
+ */
 @SuppressWarnings("UnstableApiUsage")
 public final class NoJumpDelayClientGameTest implements FabricClientGameTest {
-	private static final Logger LOGGER = LoggerFactory.getLogger("nojumpdelay-gametest");
-
-	/** Number of ticks the jump key is held while counting jumps. */
-	private static final int OBSERVED_TICKS = 100;
-	/** Vanilla cooldown between two jumps, in ticks. */
-	private static final int VANILLA_JUMP_DELAY = 10;
-	/** Upper bound on the jumps vanilla allows within {@link #OBSERVED_TICKS}. */
-	private static final int MAX_VANILLA_JUMPS = OBSERVED_TICKS / VANILLA_JUMP_DELAY + 1;
-
 	@Override
 	public void runTest(final ClientGameTestContext context) {
-		KeyMapping toggleKey = Objects.requireNonNull(KeyMapping.get(NoJumpDelayClient.TOGGLE_KEY_NAME), "toggle key mapping");
-
-		// The run directory is deleted before each run, so this is the state of a fresh installation.
-		check(isEnabled(context), "the feature should be enabled by default");
-		check(loadSavedConfig().isEnabled(), "the config file should be created with the feature enabled");
-
-		context.runOnClient(client -> {
-			toggleKey.setKey(InputConstants.getKey("key.keyboard.j"));
-			KeyMapping.resetMapping();
+		configure(context, config -> {
+			config.setEnabled(true);
+			config.setSingleplayerDefault(true);
+			config.setResetOnWorldExit(false);
+			config.setResetOnGameExit(false);
 		});
+		KeyMapping toggleKey = bindKey(context, NoJumpDelayClient.TOGGLE_KEY_NAME, "key.keyboard.j");
+		KeyMapping openSettingsKey = bindKey(context, NoJumpDelayClient.OPEN_SETTINGS_KEY_NAME, "key.keyboard.k");
 
 		try (TestSingleplayerContext singleplayer = context.worldBuilder().create()) {
 			singleplayer.getConnection().waitForChunksRender();
-			placeLowCeiling(context, singleplayer);
+			placeLowCeiling(context, singleplayer.getServer());
 
-			int enabledJumps = countJumps(context);
-			LOGGER.info("Jumps in {} ticks with the mod enabled: {}", OBSERVED_TICKS, enabledJumps);
-			check(enabledJumps > MAX_VANILLA_JUMPS,
-					"expected more than " + MAX_VANILLA_JUMPS + " jumps with the mod enabled, got " + enabledJumps);
+			checkCooldownRemoved(context, "in singleplayer with the mod enabled");
 
 			context.getInput().pressKey(toggleKey);
 			context.waitTick();
@@ -52,76 +49,86 @@ public final class NoJumpDelayClientGameTest implements FabricClientGameTest {
 			check(!loadSavedConfig().isEnabled(), "disabled state should be saved to the config file");
 			context.takeScreenshot("nojumpdelay-toggled-off");
 
-			int disabledJumps = countJumps(context);
-			LOGGER.info("Jumps in {} ticks with the mod disabled: {}", OBSERVED_TICKS, disabledJumps);
-			check(disabledJumps <= MAX_VANILLA_JUMPS,
-					"expected at most " + MAX_VANILLA_JUMPS + " jumps with the mod disabled, got " + disabledJumps);
+			checkVanillaCooldown(context, "in singleplayer with the mod disabled");
 
 			context.getInput().pressKey(toggleKey);
 			context.waitTick();
 			check(isEnabled(context), "toggle key should enable the feature again");
 			check(loadSavedConfig().isEnabled(), "enabled state should be saved to the config file");
+
+			checkSettingsScreens(context, openSettingsKey);
+
+			// Leave this world disabled to check the reset on world exit below.
+			configure(context, config -> config.setResetOnWorldExit(true));
+			context.getInput().pressKey(toggleKey);
+			context.waitTick();
+			check(!isEnabled(context), "toggle key should disable the feature before leaving");
 		}
 
-		context.setScreen(() -> new NoJumpDelayConfigScreen(null));
-		context.takeScreenshot("nojumpdelay-config-screen");
+		try (TestSingleplayerContext singleplayer = context.worldBuilder().create()) {
+			singleplayer.getConnection().waitForChunksRender();
+			check(isEnabled(context), "reset on world exit should restore the singleplayer default");
+
+			configure(context, config -> config.setResetOnWorldExit(false));
+			context.getInput().pressKey(toggleKey);
+			context.waitTick();
+			check(!isEnabled(context), "toggle key should disable the feature before leaving");
+		}
+
+		try (TestSingleplayerContext singleplayer = context.worldBuilder().create()) {
+			singleplayer.getConnection().waitForChunksRender();
+			check(!isEnabled(context), "without reset on world exit the state should carry over");
+		}
+
+		configure(context, config -> config.setEnabled(true));
+		unbindKey(context, toggleKey);
+		unbindKey(context, openSettingsKey);
+	}
+
+	/**
+	 * Opens the settings with the key binding, then takes screenshots of both settings screens in English and in
+	 * Simplified Chinese.
+	 */
+	private static void checkSettingsScreens(final ClientGameTestContext context, final KeyMapping openSettingsKey) {
+		context.getInput().pressKey(openSettingsKey);
+		context.waitForScreen(NoJumpDelayConfigScreen.class);
 		context.setScreen(() -> null);
 
-		context.runOnClient(client -> {
-			toggleKey.setKey(toggleKey.getDefaultKey());
-			KeyMapping.resetMapping();
+		configure(context, config -> {
+			config.setMultiplayerMode(MultiplayerMode.WHITELIST);
+			config.setServers(List.of("mc.example.com", "192.168.1.5"));
+		});
+		// Keep the cursor away from the widgets so no tooltip covers them.
+		context.getInput().setCursorPos(0, 0);
+		takeSettingsScreenshots(context, "en_us");
+		switchLanguage(context, "zh_cn");
+		takeSettingsScreenshots(context, "zh_cn");
+		switchLanguage(context, "en_us");
+
+		configure(context, config -> {
+			config.setMultiplayerMode(MultiplayerMode.DISABLED);
+			config.setServers(List.of());
 		});
 	}
 
-	/**
-	 * Surrounds the space above the player's head with blocks 0.2 blocks above it, so each jump ends after a few
-	 * ticks, well within the vanilla cooldown.
-	 */
-	private static void placeLowCeiling(final ClientGameTestContext context, final TestSingleplayerContext singleplayer) {
-		singleplayer.getServer().runCommand("gamemode survival @a");
-		context.waitFor(client -> client.player.onGround());
+	private static void takeSettingsScreenshots(final ClientGameTestContext context, final String language) {
+		context.setScreen(() -> new NoJumpDelayConfigScreen(null));
+		context.takeScreenshot("nojumpdelay-config-screen-" + language);
+		context.getInput().scroll(-20);
+		context.waitTick();
+		context.takeScreenshot("nojumpdelay-config-screen-bottom-" + language);
 
-		BlockPos feet = context.computeOnClient(client -> client.player.blockPosition());
-		BlockPos ceiling = feet.above(2);
-		singleplayer.getServer().runCommand("fill %d %d %d %d %d %d minecraft:stone".formatted(
-				ceiling.getX() - 1, ceiling.getY(), ceiling.getZ() - 1,
-				ceiling.getX() + 1, ceiling.getY(), ceiling.getZ() + 1));
-		context.waitFor(client -> !client.level.getBlockState(ceiling).isAir());
+		context.setScreen(() -> new ServerListScreen(new NoJumpDelayConfigScreen(null), NoJumpDelayClient.config()));
+		context.takeScreenshot("nojumpdelay-server-list-" + language);
+		context.setScreen(() -> null);
 	}
 
-	/**
-	 * Holds the jump key for {@link #OBSERVED_TICKS} ticks and counts how often the player leaves the ground.
-	 */
-	private static int countJumps(final ClientGameTestContext context) {
-		context.getInput().holdKey(options -> options.keyJump);
-
-		int jumps = 0;
-		boolean wasOnGround = context.computeOnClient(client -> client.player.onGround());
-		for (int tick = 0; tick < OBSERVED_TICKS; tick++) {
-			context.waitTick();
-			boolean onGround = context.computeOnClient(client -> client.player.onGround());
-			if (wasOnGround && !onGround) {
-				jumps++;
-			}
-			wasOnGround = onGround;
-		}
-
-		context.getInput().releaseKey(options -> options.keyJump);
-		context.waitFor(client -> client.player.onGround());
-		return jumps;
-	}
-
-	private static boolean isEnabled(final ClientGameTestContext context) {
-		return context.computeOnClient(client -> NoJumpDelayClient.config().isEnabled());
-	}
-
-	private static NoJumpDelayConfig loadSavedConfig() {
-		return NoJumpDelayConfig.load(NoJumpDelayConfig.defaultPath());
-	}
-
-	private static void check(final boolean condition, final String message) {
-		if (!condition) {
-			throw new AssertionError(message);
-		}
+	private static void switchLanguage(final ClientGameTestContext context, final String language) {
+		CompletableFuture<Void> reload = context.computeOnClient(client -> {
+			client.getLanguageManager().setSelected(language);
+			client.options.languageCode = language;
+			return client.reloadResourcePacks();
+		});
+		context.waitFor(client -> reload.isDone() && client.gui.overlay() == null);
 	}
 }
